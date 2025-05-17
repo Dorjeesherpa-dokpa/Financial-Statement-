@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Client, Product, Transaction } from '../types';
@@ -294,7 +293,7 @@ const TransactionsTab: React.FC = () => {
               <TableBody>
                 {filteredTransactions.length > 0 ? (
                   filteredTransactions.map(transaction => (
-                    <TableRow key={transaction.id}>
+                    <TableRow key={`transaction-${transaction.id}`}>
                       <TableCell>{format(new Date(transaction.date), 'dd/MM/yyyy')}</TableCell>
                       <TableCell>{getClientName(transaction.clientId)}</TableCell>
                       <TableCell>{getProductName(transaction.productId)}</TableCell>
