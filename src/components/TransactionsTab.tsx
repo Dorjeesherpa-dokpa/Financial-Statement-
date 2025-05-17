@@ -15,6 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Search } from "lucide-react";
 import { cn } from '@/lib/utils';
+import ExampleTransactionGuide from './ExampleTransactionGuide';
 
 const TransactionsTab: React.FC = () => {
   const [clients] = useLocalStorage<Client[]>('clients', []);
@@ -29,6 +30,7 @@ const TransactionsTab: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClientId, setFilterClientId] = useState<string>('');
+  const [showExample, setShowExample] = useState(true);
   
   const { toast } = useToast();
 
@@ -103,6 +105,10 @@ const TransactionsTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {showExample && (
+        <ExampleTransactionGuide onDismiss={() => setShowExample(false)} />
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Record New Transaction</CardTitle>
