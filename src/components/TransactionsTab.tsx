@@ -128,7 +128,7 @@ const TransactionsTab: React.FC = () => {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-clients" disabled>
                       No clients available
                     </SelectItem>
                   )}
@@ -264,7 +264,7 @@ const TransactionsTab: React.FC = () => {
                   <SelectValue placeholder="Filter by client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All clients</SelectItem>
+                  <SelectItem value="all-clients">All clients</SelectItem>
                   {clients.map(client => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
