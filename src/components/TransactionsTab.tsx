@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Client, Product, Transaction } from '../types';
@@ -12,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search } from "lucide-react";
+import { CalendarIcon, Search, Edit } from "lucide-react";
 import { cn } from '@/lib/utils';
 import ExampleTransactionGuide from './ExampleTransactionGuide';
+import EditTransactionDialog from './EditTransactionDialog';
 
 const TransactionsTab: React.FC = () => {
   const [clients] = useLocalStorage<Client[]>('clients', []);
@@ -30,6 +32,10 @@ const TransactionsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClientId, setFilterClientId] = useState<string>('');
   const [showExample, setShowExample] = useState(true);
+  
+  // Edit transaction state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   
   const { toast } = useToast();
 
@@ -90,9 +96,27 @@ const TransactionsTab: React.FC = () => {
     const product = products.find(p => p.id === productId);
     return product ? `${product.name} (${product.size})` : 'Unknown Product';
   };
+  
+  const handleEditTransaction = (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setEditDialogOpen(true);
+  };
+  
+  const saveEditedTransaction = (updatedTransaction: Transaction) => {
+    const updatedTransactions = transactions.map(t => 
+      t.id === updatedTransaction.id ? updatedTransaction : t
+    );
+    
+    setTransactions(updatedTransactions);
+    
+    toast({
+      title: "Transaction Updated",
+      description: `Transaction for ${getClientName(updatedTransaction.clientId)} has been updated.`,
+    });
+  };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesClient = !filterClientId || transaction.clientId === filterClientId;
+    const matchesClient = !filterClientId || filterClientId === 'all-clients' || transaction.clientId === filterClientId;
     const clientName = getClientName(transaction.clientId).toLowerCase();
     const productName = getProductName(transaction.productId).toLowerCase();
     const matchesSearch = !searchTerm || 
@@ -288,6 +312,7 @@ const TransactionsTab: React.FC = () => {
                   <TableHead className="text-right">Paid (€)</TableHead>
                   <TableHead className="text-right">Due (€)</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -305,11 +330,21 @@ const TransactionsTab: React.FC = () => {
                       <TableCell className={transaction.paymentStatus === 'settled' ? 'status-settled' : 'status-pending'}>
                         {transaction.paymentStatus === 'settled' ? 'Settled' : 'Pending'}
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleEditTransaction(transaction)}
+                          title="Edit Transaction"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                       {transactions.length === 0 ? 'No transactions recorded yet.' : 'No transactions match your search.'}
                     </TableCell>
                   </TableRow>
@@ -319,6 +354,15 @@ const TransactionsTab: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+      
+      <EditTransactionDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        transaction={selectedTransaction}
+        onSave={saveEditedTransaction}
+        getClientName={getClientName}
+        getProductName={getProductName}
+      />
     </div>
   );
 };

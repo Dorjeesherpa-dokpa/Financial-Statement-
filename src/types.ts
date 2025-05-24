@@ -15,6 +15,14 @@ export interface Product {
 
 export type PaymentStatus = 'settled' | 'pending';
 
+export interface TransactionEdit {
+  date: Date;
+  previousAmountPaid: number;
+  newAmountPaid: number;
+  previousStatus: PaymentStatus;
+  newStatus: PaymentStatus;
+}
+
 export interface Transaction {
   id: string;
   clientId: string;
@@ -26,6 +34,8 @@ export interface Transaction {
   paymentStatus: PaymentStatus;
   amountPaid: number;
   amountDue: number;
+  editHistory?: TransactionEdit[];
+  lastEditedAt?: Date;
 }
 
 export interface ReportFilter {
