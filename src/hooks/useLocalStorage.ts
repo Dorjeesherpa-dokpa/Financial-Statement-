@@ -5,6 +5,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   // Get from local storage then
   // parse stored json or return initialValue
   const readValue = () => {
+    // SSR Next.js
+    if (typeof window === 'undefined') {
+      return initialValue;
+    }
+    
     try {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
@@ -30,16 +35,29 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       setStoredValue(valueToStore);
       
       // Save to local storage
-      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+      }
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
     }
   };
 
+  // Listen for changes to this localStorage key in other tabs/windows
   useEffect(() => {
-    setStoredValue(readValue());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === key && e.newValue !== JSON.stringify(storedValue)) {
+        setStoredValue(e.newValue ? JSON.parse(e.newValue) : initialValue);
+      }
+    };
+    
+    // This is needed to update the state when localStorage changes from another tab
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
+    return undefined;
+  }, [key, initialValue, storedValue]);
 
   return [storedValue, setValue] as const;
 }

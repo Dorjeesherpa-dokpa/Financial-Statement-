@@ -33,6 +33,7 @@ const ProductsTab: React.FC = () => {
 
   const handleProductAdded = () => {
     setAddProductOpen(false);
+    // No need to fetch products again since useLocalStorage hook will update automatically
   };
 
   const renderProductTable = (productList: Product[]) => {
