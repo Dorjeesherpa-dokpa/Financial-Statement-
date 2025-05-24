@@ -1,27 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Plus, PackageOpen } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Product } from '../types';
-import { products } from '../data/products';
+import { products as defaultProducts } from '../data/products';
+import { useLocalStorage } from '../hooks/useLocalStorage';
+import AddProductForm from './AddProductForm';
 
 const ProductsTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [addProductOpen, setAddProductOpen] = useState(false);
+  const [storedProducts, setStoredProducts] = useLocalStorage<Product[]>('products', defaultProducts);
+  
   // Group products by category
-  const pailProducts = products.filter(p => p.category === 'Pail');
-  const smallBottleProducts = products.filter(p => p.category === 'Small Bottles');
-  const drumProducts = products.filter(p => p.category === 'Drums');
-  const ibcProducts = products.filter(p => p.category === 'IBC');
+  const pailProducts = storedProducts.filter(p => p.category === 'Pail');
+  const smallBottleProducts = storedProducts.filter(p => p.category === 'Small Bottles');
+  const drumProducts = storedProducts.filter(p => p.category === 'Drums');
+  const ibcProducts = storedProducts.filter(p => p.category === 'IBC');
 
   // Filter products based on search term
   const filterProducts = (productList: Product[]) => {
     return productList.filter(product => 
       product.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+  };
+
+  const handleProductAdded = () => {
+    setAddProductOpen(false);
   };
 
   const renderProductTable = (productList: Product[]) => {
@@ -60,8 +71,25 @@ const ProductsTab: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Products Catalog</CardTitle>
+          <Popover open={addProductOpen} onOpenChange={setAddProductOpen}>
+            <PopoverTrigger asChild>
+              <Button size="sm" className="h-9">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 md:w-96 p-4">
+              <div className="space-y-4">
+                <div className="flex items-center">
+                  <PackageOpen className="mr-2 h-4 w-4" />
+                  <h4 className="font-medium text-sm">Add New Product</h4>
+                </div>
+                <AddProductForm onProductAdded={handleProductAdded} />
+              </div>
+            </PopoverContent>
+          </Popover>
         </CardHeader>
         <CardContent>
           <div className="mb-6">
