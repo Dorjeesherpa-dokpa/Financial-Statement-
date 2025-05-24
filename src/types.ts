@@ -43,5 +43,5 @@ export interface ReportFilter {
   endDate: Date;
   clientId?: string;
   paymentStatus?: PaymentStatus;
-  reportType: 'weekly' | 'monthly' | 'quarterly';
+  reportType: 'weekly' | 'monthly' | 'quarterly' | 'custom';
 }

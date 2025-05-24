@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { Client, Transaction, PaymentStatus } from '../types';
+import { Client, Transaction, PaymentStatus, ReportFilter } from '../types';
 import { products } from '../data/products';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,15 +10,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Printer } from "lucide-react";
+import { Download, Printer, Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 const ReportsTab: React.FC = () => {
   const [clients] = useLocalStorage<Client[]>('clients', []);
   const [transactions] = useLocalStorage<Transaction[]>('transactions', []);
   
-  const [reportPeriod, setReportPeriod] = useState<'weekly' | 'monthly' | 'quarterly'>('weekly');
-  const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [reportPeriod, setReportPeriod] = useState<'weekly' | 'monthly' | 'quarterly' | 'custom'>('weekly');
+  const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatus | 'all'>('all');
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: new Date(),
+    to: new Date(),
+  });
   
   const currentDate = new Date();
   
@@ -37,17 +47,37 @@ const ReportsTab: React.FC = () => {
       start: startOfQuarter(currentDate),
       end: endOfQuarter(currentDate),
       label: `Q${Math.floor(currentDate.getMonth() / 3) + 1} ${currentDate.getFullYear()}`
+    },
+    custom: {
+      start: dateRange.from || currentDate,
+      end: dateRange.to || currentDate,
+      label: dateRange.from && dateRange.to ? 
+        `${format(dateRange.from, 'PP')} - ${format(dateRange.to, 'PP')}` : 
+        'Custom Range'
     }
-  }), [currentDate]);
+  }), [currentDate, dateRange]);
+
+  // Update date range when report period changes
+  useEffect(() => {
+    if (reportPeriod !== 'custom') {
+      setDateRange({
+        from: dateRanges[reportPeriod].start,
+        to: dateRanges[reportPeriod].end
+      });
+    }
+  }, [reportPeriod, dateRanges]);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
+      const rangeStart = dateRanges[reportPeriod].start;
+      const rangeEnd = dateRanges[reportPeriod].end;
+      
       const isInDateRange = 
-        transactionDate >= dateRanges[reportPeriod].start &&
-        transactionDate <= dateRanges[reportPeriod].end;
+        transactionDate >= rangeStart &&
+        transactionDate <= rangeEnd;
         
-      const matchesClient = !selectedClientId || transaction.clientId === selectedClientId;
+      const matchesClient = selectedClientId === 'all' || transaction.clientId === selectedClientId;
       
       const matchesStatus = 
         paymentStatusFilter === 'all' || 
@@ -140,17 +170,59 @@ const ReportsTab: React.FC = () => {
           <CardTitle>Financial Reports</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 print:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 print:hidden">
             <div className="space-y-2">
               <Label>Report Period</Label>
               <Tabs value={reportPeriod} onValueChange={(value) => setReportPeriod(value as any)}>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="weekly">Weekly</TabsTrigger>
                   <TabsTrigger value="monthly">Monthly</TabsTrigger>
                   <TabsTrigger value="quarterly">Quarterly</TabsTrigger>
+                  <TabsTrigger value="custom">Custom</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
+            
+            {reportPeriod === 'custom' && (
+              <div className="space-y-2">
+                <Label>Date Range</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange.from && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                            {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label>Client</Label>
@@ -159,7 +231,7 @@ const ReportsTab: React.FC = () => {
                   <SelectValue placeholder="Filter by client" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All clients</SelectItem>
+                  <SelectItem value="all">All clients</SelectItem>
                   {clients.map(client => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
