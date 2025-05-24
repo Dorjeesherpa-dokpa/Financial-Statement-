@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface AddProductFormProps {
   onProductAdded: () => void;
@@ -42,7 +42,7 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onProductAdded }) => {
 
     // Create a unique ID for the new product
     const newProduct: Product = {
-      id: `${productName}_${productSize}`.replace(/\s/g, '_').toLowerCase(),
+      id: `${Date.now()}_${productName}_${productSize}`.replace(/\s/g, '_').toLowerCase(),
       name: productName,
       size: productSize,
       category: productCategory,
@@ -104,8 +104,11 @@ const AddProductForm: React.FC<AddProductFormProps> = ({ onProductAdded }) => {
         
         <div className="space-y-2">
           <Label htmlFor="product-category">Category</Label>
-          <Select value={productCategory} onValueChange={(value) => setProductCategory(value as 'Pail' | 'Drums' | 'IBC' | 'Small Bottles')}>
-            <SelectTrigger>
+          <Select 
+            value={productCategory} 
+            onValueChange={(value) => setProductCategory(value as 'Pail' | 'Drums' | 'IBC' | 'Small Bottles')}
+          >
+            <SelectTrigger id="product-category">
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { Client, Transaction, PaymentStatus, ReportFilter } from '../types';
@@ -215,7 +214,14 @@ const ReportsTab: React.FC = () => {
                     <Calendar
                       mode="range"
                       selected={dateRange}
-                      onSelect={setDateRange}
+                      onSelect={(range) => {
+                        if (range) {
+                          setDateRange({
+                            from: range.from,
+                            to: range.to || range.from
+                          });
+                        }
+                      }}
                       initialFocus
                       className={cn("p-3 pointer-events-auto")}
                     />
